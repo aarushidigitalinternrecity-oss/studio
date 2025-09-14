@@ -210,11 +210,75 @@ export function useAtomicState() {
       };
     });
   }, [addDailyRecord]);
+
+  const addHabit = useCallback((name: string, points: number) => {
+    updateState(prevState => {
+        const newHabit: Habit = {
+            id: `h-${Date.now()}`,
+            name,
+            points,
+            completed: false,
+        };
+        return {
+            ...prevState,
+            habits: [...prevState.habits, newHabit],
+        };
+    });
+  }, []);
+
+  const updateHabit = useCallback((habitId: string, newName: string, newPoints: number) => {
+      updateState(prevState => {
+          const habit = prevState.habits.find(h => h.id === habitId);
+          if (!habit) return prevState;
+
+          let weeklyPoints = prevState.weeklyPoints;
+          let totalXp = prevState.totalXp;
+
+          if (habit.completed) {
+              const pointsDifference = newPoints - habit.points;
+              weeklyPoints = Math.max(0, weeklyPoints + pointsDifference);
+              totalXp = Math.max(0, totalXp + pointsDifference * 10);
+              addDailyRecord(pointsDifference);
+          }
+
+          return {
+              ...prevState,
+              habits: prevState.habits.map(h =>
+                  h.id === habitId ? { ...h, name: newName, points: newPoints } : h
+              ),
+              weeklyPoints,
+              totalXp,
+          };
+      });
+  }, [addDailyRecord]);
+
+  const deleteHabit = useCallback((habitId: string) => {
+      updateState(prevState => {
+          const habit = prevState.habits.find(h => h.id === habitId);
+          if (!habit) return prevState;
+
+          let weeklyPoints = prevState.weeklyPoints;
+          let totalXp = prevState.totalXp;
+
+          if (habit.completed) {
+              weeklyPoints = Math.max(0, weeklyPoints - habit.points);
+              totalXp = Math.max(0, totalXp - habit.points * 10);
+              addDailyRecord(-habit.points);
+          }
+
+          return {
+              ...prevState,
+              habits: prevState.habits.filter(h => h.id !== habitId),
+              weeklyPoints,
+              totalXp,
+          };
+      });
+  }, [addDailyRecord]);
   
   const state = internalState ? {
     ...internalState,
     ...calculateLevelInfo(internalState.totalXp),
   } : null;
 
-  return { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask, toggleHabit, addDailyRecord };
+  return { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask, toggleHabit, addHabit, updateHabit, deleteHabit, addDailyRecord };
 }
