@@ -93,7 +93,7 @@ function TaskItem({ task, onToggle, onUpdate }: { task: Task, onToggle: (id: str
   );
 }
 
-function AddTaskForm({ onAddTask }: { onAddTask: (name: string, urgency: Urgency) => void }) {
+function AddTaskForm({ onAddTask, disabled }: { onAddTask: (name: string, urgency: Urgency) => void, disabled: boolean }) {
   const [name, setName] = React.useState('');
   const [urgency, setUrgency] = React.useState<Urgency>('medium');
   const { toast } = useToast();
@@ -105,6 +105,14 @@ function AddTaskForm({ onAddTask }: { onAddTask: (name: string, urgency: Urgency
         variant: "destructive",
         title: "Task name is empty",
         description: "Please enter a name for the task.",
+      });
+      return;
+    }
+    if (disabled) {
+      toast({
+        variant: "destructive",
+        title: "Task limit reached",
+        description: "You can only add up to 10 tasks for tomorrow.",
       });
       return;
     }
@@ -125,11 +133,12 @@ function AddTaskForm({ onAddTask }: { onAddTask: (name: string, urgency: Urgency
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g., Water the plants"
+          disabled={disabled}
         />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="new-task-urgency">Urgency</Label>
-        <Select value={urgency} onValueChange={(v: Urgency) => setUrgency(v)}>
+        <Select value={urgency} onValueChange={(v: Urgency) => setUrgency(v)} disabled={disabled}>
           <SelectTrigger id="new-task-urgency" className="w-full">
             <SelectValue placeholder="Select urgency" />
           </SelectTrigger>
@@ -140,7 +149,7 @@ function AddTaskForm({ onAddTask }: { onAddTask: (name: string, urgency: Urgency
           </SelectContent>
         </Select>
       </div>
-      <Button type="submit" className="w-full sm:w-auto">
+      <Button type="submit" className="w-full sm:w-auto" disabled={disabled}>
         <Plus className="mr-2 h-4 w-4" />
         Add Task
       </Button>
@@ -150,6 +159,7 @@ function AddTaskForm({ onAddTask }: { onAddTask: (name: string, urgency: Urgency
 
 export function TasksTab({ state, toggleTask, addTomorrowTask, updateTask }: TasksTabProps) {
   const { todayTasks, tomorrowTasks } = state;
+  const isTomorrowTaskLimitReached = tomorrowTasks.length >= 10;
 
   return (
     <div className="grid gap-6 animate-in fade-in-0 duration-500">
@@ -184,10 +194,13 @@ export function TasksTab({ state, toggleTask, addTomorrowTask, updateTask }: Tas
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <Label>Add a Task</Label>
-                <AddTaskForm onAddTask={addTomorrowTask} />
+                <AddTaskForm onAddTask={addTomorrowTask} disabled={isTomorrowTaskLimitReached} />
               </div>
               <div className="space-y-4">
-                <Label>Planned Tasks</Label>
+                <div className="flex justify-between items-center">
+                  <Label>Planned Tasks</Label>
+                  <span className="text-sm text-muted-foreground">{tomorrowTasks.length} / 10</span>
+                </div>
                 {tomorrowTasks.length > 0 ? (
                   <ScrollArea className="h-48">
                     <ul className="space-y-2 text-sm text-muted-foreground pr-4">
@@ -204,6 +217,9 @@ export function TasksTab({ state, toggleTask, addTomorrowTask, updateTask }: Tas
                   <div className="flex items-center justify-center h-48 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground text-sm">No tasks planned for tomorrow.</p>
                   </div>
+                )}
+                 {isTomorrowTaskLimitReached && (
+                  <p className="text-sm text-center text-yellow-500">Task limit for tomorrow reached.</p>
                 )}
               </div>
             </div>
