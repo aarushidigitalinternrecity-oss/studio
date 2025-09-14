@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { AppState, Urgency, Task } from '@/lib/types';
 import { calculateLevelInfo } from '@/hooks/use-atomic-state';
-import { ListTodo, Plus, Flame, Edit, Save, X } from 'lucide-react';
+import { ListTodo, Plus, Flame, Edit, Save, X, Zap } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
@@ -95,7 +95,7 @@ function TaskItem({ task, onToggle, onUpdate }: { task: Task, onToggle: (id: str
   );
 }
 
-function AddTaskForm({ onAddTask, disabled, listName }: { onAddTask: (name: string, urgency: Urgency) => void, disabled: boolean, listName: string }) {
+function AddTaskForm({ onAddTask, disabled, listName, onBreakDown }: { onAddTask: (name: string, urgency: Urgency) => void, disabled: boolean, listName: string, onBreakDown: (name: string) => void }) {
   const [name, setName] = React.useState('');
   const [urgency, setUrgency] = React.useState<Urgency>('medium');
   const { toast } = useToast();
@@ -125,13 +125,27 @@ function AddTaskForm({ onAddTask, disabled, listName }: { onAddTask: (name: stri
       title: `Task added to ${listName}'s plan!`,
     });
   };
+  
+  const handleBreakDown = () => {
+    if (!name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Task name is empty",
+        description: "Please enter a name for the task to break it down.",
+      });
+      return;
+    }
+    onBreakDown(name.trim());
+    setName(`Do ${name.trim()} for 2 minutes`);
+    setUrgency('low');
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-2">
-        <Label htmlFor="new-task-name">New Task Name</Label>
+        <Label htmlFor={`new-task-name-${listName}`}>New Task Name</Label>
         <Input 
-          id="new-task-name"
+          id={`new-task-name-${listName}`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g., Water the plants"
@@ -139,9 +153,9 @@ function AddTaskForm({ onAddTask, disabled, listName }: { onAddTask: (name: stri
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="new-task-urgency">Urgency</Label>
+        <Label htmlFor={`new-task-urgency-${listName}`}>Urgency</Label>
         <Select value={urgency} onValueChange={(v: Urgency) => setUrgency(v)} disabled={disabled}>
-          <SelectTrigger id="new-task-urgency" className="w-full">
+          <SelectTrigger id={`new-task-urgency-${listName}`} className="w-full">
             <SelectValue placeholder="Select urgency" />
           </SelectTrigger>
           <SelectContent>
@@ -151,18 +165,32 @@ function AddTaskForm({ onAddTask, disabled, listName }: { onAddTask: (name: stri
           </SelectContent>
         </Select>
       </div>
-      <Button type="submit" className="w-full sm:w-auto" disabled={disabled}>
-        <Plus className="mr-2 h-4 w-4" />
-        Add Task
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" className="flex-grow sm:flex-grow-0" disabled={disabled}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Task
+        </Button>
+        <Button type="button" variant="outline" onClick={handleBreakDown} className="flex-grow sm:flex-grow-0" disabled={disabled}>
+            <Zap className="mr-2 h-4 w-4" />
+            Break it down
+        </Button>
+      </div>
     </form>
   )
 }
 
 export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, updateTask }: TasksTabProps) {
   const { todayTasks, tomorrowTasks } = state;
+  const { toast } = useToast();
   const isTodayTaskLimitReached = todayTasks.length >= 10;
   const isTomorrowTaskLimitReached = tomorrowTasks.length >= 10;
+  
+  const handleBreakDown = (taskName: string) => {
+    toast({
+        title: "Task broken down!",
+        description: `New task: "Do ${taskName} for 2 minutes"`,
+    });
+  };
 
   return (
     <div className="grid gap-6 animate-in fade-in-0 duration-500">
@@ -195,7 +223,7 @@ export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, upd
               Add a task for today
             </AccordionTrigger>
             <AccordionContent className="px-6">
-              <AddTaskForm onAddTask={addTodayTask} disabled={isTodayTaskLimitReached} listName="today" />
+              <AddTaskForm onAddTask={addTodayTask} disabled={isTodayTaskLimitReached} listName="today" onBreakDown={handleBreakDown} />
               {isTodayTaskLimitReached && (
                   <p className="text-sm text-center text-yellow-500 mt-4">Task limit for today reached.</p>
               )}
@@ -213,7 +241,7 @@ export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, upd
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <Label>Add a Task</Label>
-                <AddTaskForm onAddTask={addTomorrowTask} disabled={isTomorrowTaskLimitReached} listName="tomorrow" />
+                <AddTaskForm onAddTask={addTomorrowTask} disabled={isTomorrowTaskLimitReached} listName="tomorrow" onBreakDown={handleBreakDown} />
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">

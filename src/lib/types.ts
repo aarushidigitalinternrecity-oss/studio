@@ -8,6 +8,18 @@ export interface Task {
   urgency: Urgency;
 }
 
+export interface Habit {
+  id: string;
+  name: string;
+  points: number;
+  completed: boolean;
+}
+
+export interface DailyRecord {
+    date: string;
+    points: number;
+}
+
 export interface Achievement {
   id: string;
   name: string;
@@ -19,6 +31,8 @@ export interface Achievement {
 export interface AppState {
   todayTasks: Task[];
   tomorrowTasks: Task[];
+  habits: Habit[];
+  history: DailyRecord[];
   weeklyPoints: number;
   weeklyGoal: number;
   dailyStreak: number;

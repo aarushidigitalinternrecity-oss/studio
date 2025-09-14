@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import type { AppState, Task, Urgency } from '@/lib/types';
+import type { AppState, Task, Urgency, Habit, DailyRecord } from '@/lib/types';
 import { initialData } from '@/lib/data';
+import { useToast } from './use-toast';
+import { format } from 'date-fns';
 
 const STORAGE_KEY = 'atomic-habit-tracker-state';
 
@@ -31,6 +33,7 @@ export const calculateLevelInfo = (totalXp: number) => {
 export function useAtomicState() {
   const [internalState, setInternalState] = useState<AppState | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -64,12 +67,40 @@ export function useAtomicState() {
     });
   };
 
+  const addDailyRecord = useCallback((points: number) => {
+    updateState(prevState => {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const existingRecordIndex = prevState.history.findIndex(r => r.date === today);
+      let newHistory = [...prevState.history];
+      if (existingRecordIndex > -1) {
+        newHistory[existingRecordIndex].points += points;
+      } else {
+        newHistory.push({ date: today, points: points });
+      }
+      return { ...prevState, history: newHistory };
+    });
+  }, []);
+
   const toggleTask = useCallback((taskId: string) => {
+    let taskName = '';
+    let taskPoints = 0;
+    let isCompleted = false;
+    
     updateState(prevState => {
       const task = prevState.todayTasks.find(t => t.id === taskId);
       if (!task) return prevState;
 
+      taskName = task.name;
+      taskPoints = task.points;
+      isCompleted = !task.completed;
+
       const pointsChange = task.completed ? -task.points : task.points;
+
+      if (!task.completed) {
+        addDailyRecord(task.points);
+      } else {
+        addDailyRecord(-task.points);
+      }
       
       return {
         ...prevState,
@@ -80,7 +111,21 @@ export function useAtomicState() {
         totalXp: Math.max(0, prevState.totalXp + pointsChange * 10),
       };
     });
-  }, []);
+
+    if (isCompleted) {
+      if (taskPoints >= 20) {
+        toast({
+          title: "🚀 Mission Accomplished!",
+          description: `You've earned ${taskPoints} points for completing "${taskName}".`,
+        });
+      } else {
+        toast({
+          title: "✅ Task Completed!",
+          description: `You've earned ${taskPoints} points.`,
+        });
+      }
+    }
+  }, [toast, addDailyRecord]);
 
   const addTodayTask = useCallback((name: string, urgency: Urgency) => {
     updateState(prevState => {
@@ -128,6 +173,7 @@ export function useAtomicState() {
         const pointsDifference = newPoints - task.points;
         weeklyPoints = Math.max(0, weeklyPoints + pointsDifference);
         totalXp = Math.max(0, totalXp + pointsDifference * 10);
+        addDailyRecord(pointsDifference);
       }
       
       return {
@@ -139,12 +185,36 @@ export function useAtomicState() {
         totalXp
       };
     });
-  }, []);
+  }, [addDailyRecord]);
+
+  const toggleHabit = useCallback((habitId: string) => {
+    updateState(prevState => {
+      const habit = prevState.habits.find(h => h.id === habitId);
+      if (!habit) return prevState;
+
+      const pointsChange = habit.completed ? -habit.points : habit.points;
+      
+      if (!habit.completed) {
+        addDailyRecord(habit.points);
+      } else {
+        addDailyRecord(-habit.points);
+      }
+
+      return {
+        ...prevState,
+        habits: prevState.habits.map(h =>
+          h.id === habitId ? { ...h, completed: !h.completed } : h
+        ),
+        weeklyPoints: Math.max(0, prevState.weeklyPoints + pointsChange),
+        totalXp: Math.max(0, prevState.totalXp + pointsChange * 10),
+      };
+    });
+  }, [addDailyRecord]);
   
   const state = internalState ? {
     ...internalState,
     ...calculateLevelInfo(internalState.totalXp),
   } : null;
 
-  return { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask };
+  return { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask, toggleHabit, addDailyRecord };
 }

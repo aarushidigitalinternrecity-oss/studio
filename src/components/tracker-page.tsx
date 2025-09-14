@@ -4,11 +4,12 @@ import { useAtomicState } from "@/hooks/use-atomic-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HomeTab } from "@/components/home-tab";
 import { TasksTab } from "@/components/tasks-tab";
+import { AnalyticsTab } from "@/components/analytics-tab";
 import { AtomIcon } from "@/components/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function TrackerPage() {
-  const { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask } = useAtomicState();
+  const { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask, toggleHabit, addDailyRecord } = useAtomicState();
 
   if (!isLoaded || !state) {
     return <LoadingSkeleton />;
@@ -26,9 +27,10 @@ export function TrackerPage() {
       </header>
       
       <Tabs defaultValue="home" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="home">Home</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="home" className="mt-6">
           <HomeTab state={state} />
@@ -40,6 +42,13 @@ export function TrackerPage() {
             addTodayTask={addTodayTask}
             addTomorrowTask={addTomorrowTask}
             updateTask={updateTask}
+          />
+        </TabsContent>
+        <TabsContent value="analytics" className="mt-6">
+          <AnalyticsTab
+            state={state}
+            toggleHabit={toggleHabit}
+            addDailyRecord={addDailyRecord}
           />
         </TabsContent>
       </Tabs>
