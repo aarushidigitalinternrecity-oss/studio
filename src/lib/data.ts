@@ -8,15 +8,15 @@ export const initialAchievements = [
 
 export const initialData: AppState = {
   todayTasks: [
-    { id: 't1', name: 'Review project plan', points: 3, completed: false },
-    { id: 't2', name: 'Create initial mockups for the new feature', points: 8, completed: false },
-    { id: 't3', name: 'Reply to important emails', points: 2, completed: false },
-    { id: 't4', name: 'Morning workout session', points: 5, completed: false },
+    { id: 't1', name: 'Finalize Q3 report', points: 20, completed: false, urgency: 'high' },
+    { id: 't2', name: 'Prep for team meeting', points: 10, completed: false, urgency: 'medium' },
+    { id: 't3', name: 'Reply to important emails', points: 10, completed: false, urgency: 'medium' },
+    { id: 't4', name: 'Schedule dentist appointment', points: 5, completed: false, urgency: 'low' },
   ],
   tomorrowTasks: [],
-  weeklyPoints: 5,
-  weeklyGoal: 70,
+  weeklyPoints: 0,
+  weeklyGoal: 250,
   dailyStreak: 3,
-  totalXp: 20,
+  totalXp: 0,
   achievements: initialAchievements,
 };

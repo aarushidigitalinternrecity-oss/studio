@@ -1,10 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import type { AppState, Task } from '@/lib/types';
+import type { AppState, Task, Urgency } from '@/lib/types';
 import { initialData } from '@/lib/data';
 
 const STORAGE_KEY = 'atomic-habit-tracker-state';
+
+const URGENCY_POINTS: Record<Urgency, number> = {
+  low: 5,
+  medium: 10,
+  high: 20,
+};
 
 export const calculateLevelInfo = (totalXp: number) => {
   let level = 1;
@@ -52,50 +58,69 @@ export function useAtomicState() {
   }, [internalState, isLoaded]);
   
   const updateState = (updater: (prevState: AppState) => AppState) => {
-    if (!internalState) return;
-    setInternalState(updater);
+    setInternalState(prevState => {
+      if (!prevState) return null;
+      return updater(prevState);
+    });
   };
 
   const toggleTask = useCallback((taskId: string) => {
     updateState(prevState => {
-      let taskFound = false;
-      const updatedTasks = prevState.todayTasks.map(task => {
-        if (task.id === taskId) {
-          taskFound = true;
-          return { ...task, completed: !task.completed };
-        }
-        return task;
-      });
+      const task = prevState.todayTasks.find(t => t.id === taskId);
+      if (!task) return prevState;
 
-      if (!taskFound) return prevState;
-
-      const task = prevState.todayTasks.find(t => t.id === taskId)!;
       const pointsChange = task.completed ? -task.points : task.points;
       
-      const newWeeklyPoints = prevState.weeklyPoints + pointsChange;
-      const newTotalXp = prevState.totalXp + pointsChange * 10;
-
       return {
         ...prevState,
-        todayTasks: updatedTasks,
-        weeklyPoints: Math.max(0, newWeeklyPoints),
-        totalXp: Math.max(0, newTotalXp),
+        todayTasks: prevState.todayTasks.map(t =>
+          t.id === taskId ? { ...t, completed: !t.completed } : t
+        ),
+        weeklyPoints: Math.max(0, prevState.weeklyPoints + pointsChange),
+        totalXp: Math.max(0, prevState.totalXp + pointsChange * 10),
       };
     });
   }, []);
 
-  const addTomorrowTasks = useCallback((tasks: { name: string, points: number }[]) => {
+  const addTomorrowTask = useCallback((name: string, urgency: Urgency) => {
     updateState(prevState => {
-      const newTasks: Task[] = tasks.map((task, index) => ({
-        id: `tm-${Date.now()}-${index}`,
-        name: task.name,
-        points: task.points,
+      const newTask: Task = {
+        id: `tm-${Date.now()}`,
+        name,
+        urgency,
+        points: URGENCY_POINTS[urgency],
         completed: false,
-      }));
-
+      };
       return {
         ...prevState,
-        tomorrowTasks: [...prevState.tomorrowTasks, ...newTasks],
+        tomorrowTasks: [...prevState.tomorrowTasks, newTask],
+      };
+    });
+  }, []);
+
+  const updateTask = useCallback((taskId: string, newName: string, newUrgency: Urgency) => {
+    updateState(prevState => {
+      const task = prevState.todayTasks.find(t => t.id === taskId);
+      if (!task) return prevState;
+
+      const newPoints = URGENCY_POINTS[newUrgency];
+      
+      let weeklyPoints = prevState.weeklyPoints;
+      let totalXp = prevState.totalXp;
+
+      if(task.completed) {
+        const pointsDifference = newPoints - task.points;
+        weeklyPoints = Math.max(0, weeklyPoints + pointsDifference);
+        totalXp = Math.max(0, totalXp + pointsDifference * 10);
+      }
+      
+      return {
+        ...prevState,
+        todayTasks: prevState.todayTasks.map(t =>
+          t.id === taskId ? { ...t, name: newName, urgency: newUrgency, points: newPoints } : t
+        ),
+        weeklyPoints,
+        totalXp
       };
     });
   }, []);
@@ -105,5 +130,5 @@ export function useAtomicState() {
     ...calculateLevelInfo(internalState.totalXp),
   } : null;
 
-  return { state, isLoaded, toggleTask, addTomorrowTasks };
+  return { state, isLoaded, toggleTask, addTomorrowTask, updateTask };
 }

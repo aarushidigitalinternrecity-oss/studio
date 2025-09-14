@@ -81,4 +81,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  .dark .data-\[state\=checked\]\:bg-rose-500 {
+    background-color: #f43f5e !important;
+  }
+  .dark .data-\[state\=checked\]\:border-rose-500 {
+    border-color: #f43f5e !important;
+  }
 }

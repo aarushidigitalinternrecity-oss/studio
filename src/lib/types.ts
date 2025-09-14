@@ -1,8 +1,11 @@
+export type Urgency = 'low' | 'medium' | 'high';
+
 export interface Task {
   id: string;
   name: string;
   points: number;
   completed: boolean;
+  urgency: Urgency;
 }
 
 export interface Achievement {
