@@ -82,6 +82,22 @@ export function useAtomicState() {
     });
   }, []);
 
+  const addTodayTask = useCallback((name: string, urgency: Urgency) => {
+    updateState(prevState => {
+      const newTask: Task = {
+        id: `td-${Date.now()}`,
+        name,
+        urgency,
+        points: URGENCY_POINTS[urgency],
+        completed: false,
+      };
+      return {
+        ...prevState,
+        todayTasks: [...prevState.todayTasks, newTask],
+      };
+    });
+  }, []);
+
   const addTomorrowTask = useCallback((name: string, urgency: Urgency) => {
     updateState(prevState => {
       const newTask: Task = {
@@ -130,5 +146,5 @@ export function useAtomicState() {
     ...calculateLevelInfo(internalState.totalXp),
   } : null;
 
-  return { state, isLoaded, toggleTask, addTomorrowTask, updateTask };
+  return { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask };
 }

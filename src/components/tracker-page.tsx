@@ -8,7 +8,7 @@ import { AtomIcon } from "@/components/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function TrackerPage() {
-  const { state, isLoaded, toggleTask, addTomorrowTask, updateTask } = useAtomicState();
+  const { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask } = useAtomicState();
 
   if (!isLoaded || !state) {
     return <LoadingSkeleton />;
@@ -37,6 +37,7 @@ export function TrackerPage() {
           <TasksTab 
             state={state} 
             toggleTask={toggleTask} 
+            addTodayTask={addTodayTask}
             addTomorrowTask={addTomorrowTask}
             updateTask={updateTask}
           />

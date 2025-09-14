@@ -14,10 +14,12 @@ import { ListTodo, Plus, Flame, Edit, Save, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 interface TasksTabProps {
   state: AppState & ReturnType<typeof calculateLevelInfo>;
   toggleTask: (id: string) => void;
+  addTodayTask: (name: string, urgency: Urgency) => void;
   addTomorrowTask: (name: string, urgency: Urgency) => void;
   updateTask: (id: string, name: string, urgency: Urgency) => void;
 }
@@ -93,7 +95,7 @@ function TaskItem({ task, onToggle, onUpdate }: { task: Task, onToggle: (id: str
   );
 }
 
-function AddTaskForm({ onAddTask, disabled }: { onAddTask: (name: string, urgency: Urgency) => void, disabled: boolean }) {
+function AddTaskForm({ onAddTask, disabled, listName }: { onAddTask: (name: string, urgency: Urgency) => void, disabled: boolean, listName: string }) {
   const [name, setName] = React.useState('');
   const [urgency, setUrgency] = React.useState<Urgency>('medium');
   const { toast } = useToast();
@@ -112,7 +114,7 @@ function AddTaskForm({ onAddTask, disabled }: { onAddTask: (name: string, urgenc
       toast({
         variant: "destructive",
         title: "Task limit reached",
-        description: "You can only add up to 10 tasks for tomorrow.",
+        description: `You can only add up to 10 tasks for ${listName}.`,
       });
       return;
     }
@@ -120,7 +122,7 @@ function AddTaskForm({ onAddTask, disabled }: { onAddTask: (name: string, urgenc
     setName('');
     setUrgency('medium');
     toast({
-      title: "Task added to tomorrow's plan!",
+      title: `Task added to ${listName}'s plan!`,
     });
   };
 
@@ -157,17 +159,21 @@ function AddTaskForm({ onAddTask, disabled }: { onAddTask: (name: string, urgenc
   )
 }
 
-export function TasksTab({ state, toggleTask, addTomorrowTask, updateTask }: TasksTabProps) {
+export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, updateTask }: TasksTabProps) {
   const { todayTasks, tomorrowTasks } = state;
+  const isTodayTaskLimitReached = todayTasks.length >= 10;
   const isTomorrowTaskLimitReached = tomorrowTasks.length >= 10;
 
   return (
     <div className="grid gap-6 animate-in fade-in-0 duration-500">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ListTodo className="h-5 w-5" />
-            Today's Tasks
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ListTodo className="h-5 w-5" />
+              Today's Tasks
+            </div>
+            <span className="text-sm font-normal text-muted-foreground">{todayTasks.length} / 10</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -183,6 +189,19 @@ export function TasksTab({ state, toggleTask, addTomorrowTask, updateTask }: Tas
             )}
           </ScrollArea>
         </CardContent>
+         <Accordion type="single" collapsible className="w-full border-t">
+          <AccordionItem value="add-today-task" className="border-b-0">
+            <AccordionTrigger className="px-6 py-4 text-sm font-medium hover:no-underline">
+              Add a task for today
+            </AccordionTrigger>
+            <AccordionContent className="px-6">
+              <AddTaskForm onAddTask={addTodayTask} disabled={isTodayTaskLimitReached} listName="today" />
+              {isTodayTaskLimitReached && (
+                  <p className="text-sm text-center text-yellow-500 mt-4">Task limit for today reached.</p>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </Card>
       
       <Separator />
@@ -194,7 +213,7 @@ export function TasksTab({ state, toggleTask, addTomorrowTask, updateTask }: Tas
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <Label>Add a Task</Label>
-                <AddTaskForm onAddTask={addTomorrowTask} disabled={isTomorrowTaskLimitReached} />
+                <AddTaskForm onAddTask={addTomorrowTask} disabled={isTomorrowTaskLimitReached} listName="tomorrow" />
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
