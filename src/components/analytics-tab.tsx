@@ -262,7 +262,7 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
           {(habits || []).map(habit => (
              <HabitItem key={habit.id} habit={habit} onToggle={toggleHabit} onUpdate={updateHabit} onDelete={deleteHabit} />
           ))}
-          {habits.length === 0 && (
+          {(habits || []).length === 0 && (
             <p className="text-muted-foreground text-sm text-center py-4">No habits yet. Add one below!</p>
           )}
         </CardContent>
