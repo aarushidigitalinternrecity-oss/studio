@@ -79,10 +79,10 @@ function TaskItem({ task, onToggle, onUpdate }: { task: Task, onToggle: (id: str
           >
             {task.name}
           </label>
-           <div className={cn("text-xs font-semibold px-2 py-1 border rounded-full flex items-center gap-1", URGENCY_STYLES[task.urgency])}>
+           {task.urgency && <div className={cn("text-xs font-semibold px-2 py-1 border rounded-full flex items-center gap-1", URGENCY_STYLES[task.urgency])}>
             <Flame className="h-3 w-3" />
             <span>{task.urgency.charAt(0).toUpperCase() + task.urgency.slice(1)}</span>
-          </div>
+          </div>}
           <span className="text-sm font-semibold text-primary w-16 text-right">{task.points} pts</span>
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsEditing(true)}>
             <Edit className="h-4 w-4" />
