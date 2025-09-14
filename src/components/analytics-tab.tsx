@@ -37,10 +37,13 @@ export function AnalyticsTab({ state, toggleHabit }: AnalyticsTabProps) {
   const { habits, todayTasks, history } = state;
 
   const pointData = React.useMemo(() => {
-    const low = todayTasks.filter(t => t.completed && t.urgency === 'low').reduce((acc, t) => acc + t.points, 0);
-    const medium = todayTasks.filter(t => t.completed && t.urgency === 'medium').reduce((acc, t) => acc + t.points, 0);
-    const high = todayTasks.filter(t => t.completed && t.urgency === 'high').reduce((acc, t) => acc + t.points, 0);
-    const habitPoints = habits.filter(h => h.completed).reduce((acc, h) => acc + h.points, 0);
+    const safeTodayTasks = todayTasks || [];
+    const safeHabits = habits || [];
+
+    const low = safeTodayTasks.filter(t => t.completed && t.urgency === 'low').reduce((acc, t) => acc + t.points, 0);
+    const medium = safeTodayTasks.filter(t => t.completed && t.urgency === 'medium').reduce((acc, t) => acc + t.points, 0);
+    const high = safeTodayTasks.filter(t => t.completed && t.urgency === 'high').reduce((acc, t) => acc + t.points, 0);
+    const habitPoints = safeHabits.filter(h => h.completed).reduce((acc, h) => acc + h.points, 0);
 
     const data = [
       { name: "Low Urgency", value: low },
@@ -59,7 +62,7 @@ export function AnalyticsTab({ state, toggleHabit }: AnalyticsTabProps) {
     const pointsByDay: { [key: string]: number } = {};
     let maxPoints = 0;
 
-    history.forEach(record => {
+    (history || []).forEach(record => {
       const date = new Date(record.date);
       date.setUTCHours(0,0,0,0);
       const dateString = format(date, 'yyyy-MM-dd');
@@ -104,7 +107,7 @@ export function AnalyticsTab({ state, toggleHabit }: AnalyticsTabProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {habits.map(habit => (
+          {(habits || []).map(habit => (
             <div key={habit.id} className="flex items-center gap-4 p-2 rounded-lg transition-colors hover:bg-muted/50">
               <Checkbox
                 id={`habit-${habit.id}`}
