@@ -46,14 +46,20 @@ export function useAtomicState() {
       
       if (!lastVisit || !isToday(parseISO(lastVisit))) {
         // First visit of the day
-        if (stateToLoad.tomorrowTasks.length > 0) {
-          const newTodayTasks = stateToLoad.tomorrowTasks.map((task: Task) => ({
-            ...task,
-            id: `td-${Date.now()}-${Math.random()}`
-          }));
-          stateToLoad.todayTasks = [...stateToLoad.todayTasks, ...newTodayTasks];
-          stateToLoad.tomorrowTasks = [];
-        }
+        
+        // Get incomplete tasks from yesterday
+        const incompleteYesterdayTasks = (stateToLoad.todayTasks || []).filter((task: Task) => !task.completed);
+
+        // Get tasks planned for tomorrow (which is now today)
+        const newTodayTasksFromTomorrow = (stateToLoad.tomorrowTasks || []).map((task: Task) => ({
+          ...task,
+          id: `td-${Date.now()}-${Math.random()}`
+        }));
+        
+        // Combine them
+        stateToLoad.todayTasks = [...incompleteYesterdayTasks, ...newTodayTasksFromTomorrow];
+        stateToLoad.tomorrowTasks = [];
+
         // Reset completed status for habits
         if (stateToLoad.habits) {
           stateToLoad.habits = stateToLoad.habits.map((habit: Habit) => ({ ...habit, completed: false }));
