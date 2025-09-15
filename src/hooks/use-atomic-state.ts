@@ -229,6 +229,30 @@ export function useAtomicState() {
     });
   }, [addDailyRecord]);
 
+  const deleteTask = useCallback((taskId: string) => {
+    updateState(prevState => {
+      const task = prevState.todayTasks.find(t => t.id === taskId);
+      if (!task) return prevState;
+
+      let weeklyPoints = prevState.weeklyPoints;
+      let totalXp = prevState.totalXp;
+
+      if (task.completed) {
+        const points = task.points;
+        weeklyPoints = Math.max(0, weeklyPoints - points);
+        totalXp = Math.max(0, totalXp - points * 10);
+        addDailyRecord(-points);
+      }
+
+      return {
+        ...prevState,
+        todayTasks: prevState.todayTasks.filter(t => t.id !== taskId),
+        weeklyPoints,
+        totalXp
+      };
+    });
+  }, [addDailyRecord]);
+
   const toggleHabit = useCallback((habitId: string) => {
     updateState(prevState => {
       const habit = prevState.habits.find(h => h.id === habitId);
@@ -322,5 +346,7 @@ export function useAtomicState() {
     ...calculateLevelInfo(internalState.totalXp),
   } : null;
 
-  return { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask, toggleHabit, addHabit, updateHabit, deleteHabit, addDailyRecord };
+  return { state, isLoaded, toggleTask, addTodayTask, addTomorrowTask, updateTask, deleteTask, toggleHabit, addHabit, updateHabit, deleteHabit, addDailyRecord };
 }
+
+    

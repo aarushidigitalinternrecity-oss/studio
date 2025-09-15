@@ -10,11 +10,22 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { AppState, Urgency, Task } from '@/lib/types';
 import { calculateLevelInfo } from '@/hooks/use-atomic-state';
-import { ListTodo, Plus, Flame, Edit, Save, X, Zap } from 'lucide-react';
+import { ListTodo, Plus, Flame, Edit, Save, X, Zap, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface TasksTabProps {
   state: AppState & ReturnType<typeof calculateLevelInfo>;
@@ -22,6 +33,7 @@ interface TasksTabProps {
   addTodayTask: (name: string, urgency: Urgency) => void;
   addTomorrowTask: (name: string, urgency: Urgency) => void;
   updateTask: (id: string, name: string, urgency: Urgency) => void;
+  deleteTask: (id: string) => void;
 }
 
 const URGENCY_STYLES: Record<Urgency, string> = {
@@ -30,7 +42,7 @@ const URGENCY_STYLES: Record<Urgency, string> = {
   high: "text-red-500 border-red-500/50",
 };
 
-function TaskItem({ task, onToggle, onUpdate }: { task: Task, onToggle: (id: string) => void, onUpdate: (id: string, name: string, urgency: Urgency) => void }) {
+function TaskItem({ task, onToggle, onUpdate, onDelete }: { task: Task, onToggle: (id: string) => void, onUpdate: (id: string, name: string, urgency: Urgency) => void, onDelete: (id: string) => void }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [name, setName] = React.useState(task.name);
   const [urgency, setUrgency] = React.useState<Urgency>(task.urgency);
@@ -55,9 +67,10 @@ function TaskItem({ task, onToggle, onUpdate }: { task: Task, onToggle: (id: str
         checked={task.completed}
         onCheckedChange={() => onToggle(task.id)}
         className={cn("h-5 w-5", task.completed && "data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500")}
+        disabled={isEditing}
       />
       {isEditing ? (
-        <div className="flex-grow grid gap-2 grid-cols-[1fr_auto_auto_auto]">
+        <div className="flex-grow grid gap-2 grid-cols-[1fr_auto_auto_auto_auto]">
           <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9" />
           <Select value={urgency} onValueChange={(v: Urgency) => setUrgency(v)}>
             <SelectTrigger className="w-32 h-9">
@@ -71,6 +84,23 @@ function TaskItem({ task, onToggle, onUpdate }: { task: Task, onToggle: (id: str
           </Select>
           <Button size="icon" variant="ghost" className="h-9 w-9" onClick={handleSave}><Save className="h-4 w-4" /></Button>
           <Button size="icon" variant="ghost" className="h-9 w-9" onClick={handleCancel}><X className="h-4 w-4" /></Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-9 w-9 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the task "{task.name}".
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(task.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       ) : (
         <>
@@ -179,11 +209,11 @@ function AddTaskForm({ onAddTask, disabled, listName, onBreakDown }: { onAddTask
   )
 }
 
-export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, updateTask }: TasksTabProps) {
+export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, updateTask, deleteTask }: TasksTabProps) {
   const { todayTasks, tomorrowTasks } = state;
   const { toast } = useToast();
-  const isTodayTaskLimitReached = todayTasks.length >= 10;
-  const isTomorrowTaskLimitReached = tomorrowTasks.length >= 10;
+  const isTodayTaskLimitReached = (todayTasks || []).length >= 10;
+  const isTomorrowTaskLimitReached = (tomorrowTasks || []).length >= 10;
   
   const handleBreakDown = (taskName: string) => {
     toast({
@@ -201,15 +231,15 @@ export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, upd
               <ListTodo className="h-5 w-5" />
               Today's Tasks
             </div>
-            <span className="text-sm font-normal text-muted-foreground">{todayTasks.length} / 10</span>
+            <span className="text-sm font-normal text-muted-foreground">{ (todayTasks || []).length} / 10</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-72">
-            {todayTasks.length > 0 ? (
+            {(todayTasks || []).length > 0 ? (
               <div className="space-y-2 pr-4">
-                {todayTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} onToggle={toggleTask} onUpdate={updateTask} />
+                {(todayTasks || []).map((task) => (
+                  <TaskItem key={task.id} task={task} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} />
                 ))}
               </div>
             ) : (
@@ -246,12 +276,12 @@ export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, upd
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <Label>Planned Tasks</Label>
-                  <span className="text-sm text-muted-foreground">{tomorrowTasks.length} / 10</span>
+                  <span className="text-sm text-muted-foreground">{(tomorrowTasks || []).length} / 10</span>
                 </div>
-                {tomorrowTasks.length > 0 ? (
+                {(tomorrowTasks || []).length > 0 ? (
                   <ScrollArea className="h-48">
                     <ul className="space-y-2 text-sm text-muted-foreground pr-4">
-                      {tomorrowTasks.map((task) => (
+                      {(tomorrowTasks || []).map((task) => (
                         <li key={task.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
                           <Plus className="h-4 w-4 text-primary" />
                           <span className="flex-grow">{task.name}</span>
@@ -276,3 +306,5 @@ export function TasksTab({ state, toggleTask, addTodayTask, addTomorrowTask, upd
     </div>
   );
 }
+
+    
