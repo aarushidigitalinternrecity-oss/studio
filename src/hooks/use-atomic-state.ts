@@ -155,6 +155,14 @@ export function useAtomicState() {
 
   const addTodayTask = useCallback((name: string, urgency: Urgency) => {
     updateState(prevState => {
+      if ((prevState.todayTasks || []).length >= 10) {
+        toast({
+          variant: "destructive",
+          title: "Task limit reached",
+          description: "You can only add up to 10 tasks for today.",
+        });
+        return prevState;
+      }
       const newTask: Task = {
         id: `td-${Date.now()}`,
         name,
@@ -164,13 +172,21 @@ export function useAtomicState() {
       };
       return {
         ...prevState,
-        todayTasks: [...prevState.todayTasks, newTask],
+        todayTasks: [...(prevState.todayTasks || []), newTask],
       };
     });
-  }, []);
+  }, [toast]);
 
   const addTomorrowTask = useCallback((name: string, urgency: Urgency) => {
     updateState(prevState => {
+      if ((prevState.tomorrowTasks || []).length >= 10) {
+        toast({
+          variant: "destructive",
+          title: "Task limit reached",
+          description: "You can only add up to 10 tasks for tomorrow.",
+        });
+        return prevState;
+      }
       const newTask: Task = {
         id: `tm-${Date.now()}`,
         name,
@@ -180,10 +196,10 @@ export function useAtomicState() {
       };
       return {
         ...prevState,
-        tomorrowTasks: [...prevState.tomorrowTasks, newTask],
+        tomorrowTasks: [...(prevState.tomorrowTasks || []), newTask],
       };
     });
-  }, []);
+  }, [toast]);
 
   const updateTask = useCallback((taskId: string, newName: string, newUrgency: Urgency) => {
     updateState(prevState => {
@@ -247,7 +263,7 @@ export function useAtomicState() {
         };
         return {
             ...prevState,
-            habits: [...prevState.habits, newHabit],
+            habits: [...(prevState.habits || []), newHabit],
         };
     });
   }, []);
