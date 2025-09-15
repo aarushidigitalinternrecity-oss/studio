@@ -204,9 +204,7 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
   }, [todayTasks, habits]);
 
   const calendarModifiers = React.useMemo(() => {
-    const modifiers: Record<string, Date[]> = {
-      highlighted: [],
-    };
+    const modifiers: Record<string, Date[]> = {};
     const pointsByDay: { [key: string]: number } = {};
     let maxPoints = 0;
 
@@ -223,7 +221,11 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
     for (const dateStr in pointsByDay) {
       if(pointsByDay[dateStr] > 0) {
         const opacity = Math.max(0.2, pointsByDay[dateStr] / maxPoints);
-        modifiers[`opacity-${opacity.toFixed(1)}`] = [new Date(dateStr)];
+        const modifierKey = `opacity-${opacity.toFixed(1)}`;
+        if (!modifiers[modifierKey]) {
+            modifiers[modifierKey] = [];
+        }
+        modifiers[modifierKey].push(new Date(dateStr));
       }
     }
     
@@ -231,7 +233,12 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
   }, [history]);
   
   const calendarModifierStyles = React.useMemo(() => {
-    const styles: Record<string, React.CSSProperties> = {};
+    const styles: Record<string, React.CSSProperties> = {
+        empty: {
+            backgroundColor: "hsl(var(--muted)/0.5)",
+            color: "hsl(var(--muted-foreground))"
+        }
+    };
     for (let i = 2; i <= 10; i++) {
         const opacity = i / 10;
         styles[`opacity-${opacity.toFixed(1)}`] = {
@@ -322,10 +329,23 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
         <CardContent className="flex justify-center">
           <Calendar
             mode="single"
-            selected={new Date()}
             modifiers={calendarModifiers}
             modifiersStyles={calendarModifierStyles}
             className="rounded-md border p-0"
+            defaultMonth={new Date()}
+            components={{
+              DayContent: (props) => {
+                const isHighlighted = Object.values(calendarModifiers).flat().some(d => format(d, 'yyyy-MM-dd') === format(props.date, 'yyyy-MM-dd'));
+                if (!isHighlighted) {
+                  return (
+                    <span className="relative flex h-full w-full items-center justify-center rounded-md" style={calendarModifierStyles.empty}>
+                      {props.date.getDate()}
+                    </span>
+                  );
+                }
+                return <>{props.date.getDate()}</>;
+              },
+            }}
           />
         </CardContent>
       </Card>
