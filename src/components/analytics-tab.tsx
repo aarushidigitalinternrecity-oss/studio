@@ -183,6 +183,7 @@ function AddHabitForm({ onAddHabit }: { onAddHabit: (name: string, points: numbe
 
 export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, deleteHabit }: AnalyticsTabProps) {
   const { habits, todayTasks, history } = state;
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
 
   const pointData = React.useMemo(() => {
     const safeTodayTasks = todayTasks || [];
@@ -329,23 +330,11 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
         <CardContent className="flex justify-center">
           <Calendar
             mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
             modifiers={calendarModifiers}
             modifiersStyles={calendarModifierStyles}
-            className="rounded-md border p-0"
-            defaultMonth={new Date()}
-            components={{
-              DayContent: (props) => {
-                const isHighlighted = Object.values(calendarModifiers).flat().some(d => format(d, 'yyyy-MM-dd') === format(props.date, 'yyyy-MM-dd'));
-                if (!isHighlighted) {
-                  return (
-                    <span className="relative flex h-full w-full items-center justify-center rounded-md" style={calendarModifierStyles.empty}>
-                      {props.date.getDate()}
-                    </span>
-                  );
-                }
-                return <>{props.date.getDate()}</>;
-              },
-            }}
+            className="rounded-md border"
           />
         </CardContent>
       </Card>
