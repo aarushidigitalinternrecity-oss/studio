@@ -55,7 +55,9 @@ export function useAtomicState() {
           stateToLoad.tomorrowTasks = [];
         }
         // Reset completed status for habits
-        stateToLoad.habits = stateToLoad.habits.map((habit: Habit) => ({ ...habit, completed: false }));
+        if (stateToLoad.habits) {
+          stateToLoad.habits = stateToLoad.habits.map((habit: Habit) => ({ ...habit, completed: false }));
+        }
       }
       
       localStorage.setItem(LAST_VISIT_KEY, today.toISOString());
