@@ -250,6 +250,16 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
     return styles;
   }, []);
 
+  const selectedDateData = React.useMemo(() => {
+    if (!selectedDate) return null;
+    const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+    const record = (history || []).find(r => r.date === formattedDate);
+    return {
+      date: selectedDate,
+      points: record ? record.points : 0
+    };
+  }, [selectedDate, history]);
+
   return (
     <div className="grid gap-6 animate-in fade-in-0 duration-500">
       <Card>
@@ -327,7 +337,7 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
             Your daily consistency chain. Darker red means more points earned.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center">
+        <CardContent className="flex flex-col items-center gap-4">
           <Calendar
             mode="single"
             selected={selectedDate}
@@ -336,6 +346,18 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
             modifiersStyles={calendarModifierStyles}
             className="rounded-md border"
           />
+           {selectedDateData && (
+            <Card className="w-full">
+              <CardContent className="p-4 text-center">
+                <p className="text-sm font-medium">
+                  {format(selectedDateData.date, "MMMM d, yyyy")}
+                </p>
+                <p className="text-2xl font-bold text-primary">
+                  {selectedDateData.points} points
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
     </div>
