@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import type { AppState, Task, Urgency, Habit, DailyRecord } from '@/lib/types';
 import { initialData } from '@/lib/data';
 import { useToast } from './use-toast';
-import { format } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 
 const STORAGE_KEY = 'atomic-habit-tracker-state';
+const LAST_VISIT_KEY = 'atomic-habit-tracker-last-visit';
 
 const URGENCY_POINTS: Record<Urgency, number> = {
   low: 5,
@@ -38,11 +39,28 @@ export function useAtomicState() {
   useEffect(() => {
     try {
       const storedState = localStorage.getItem(STORAGE_KEY);
-      if (storedState) {
-        setInternalState(JSON.parse(storedState));
-      } else {
-        setInternalState(initialData);
+      const lastVisit = localStorage.getItem(LAST_VISIT_KEY);
+      const today = new Date();
+
+      let stateToLoad = storedState ? JSON.parse(storedState) : initialData;
+      
+      if (!lastVisit || !isToday(parseISO(lastVisit))) {
+        // First visit of the day
+        if (stateToLoad.tomorrowTasks.length > 0) {
+          const newTodayTasks = stateToLoad.tomorrowTasks.map((task: Task) => ({
+            ...task,
+            id: `td-${Date.now()}-${Math.random()}`
+          }));
+          stateToLoad.todayTasks = [...stateToLoad.todayTasks, ...newTodayTasks];
+          stateToLoad.tomorrowTasks = [];
+        }
+        // Reset completed status for habits
+        stateToLoad.habits = stateToLoad.habits.map((habit: Habit) => ({ ...habit, completed: false }));
       }
+      
+      localStorage.setItem(LAST_VISIT_KEY, today.toISOString());
+      setInternalState(stateToLoad);
+
     } catch (error) {
       console.error("Failed to load state from local storage:", error);
       setInternalState(initialData);

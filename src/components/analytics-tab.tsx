@@ -2,23 +2,19 @@
 
 import * as React from "react"
 import { BarChart, Calendar as CalendarIcon, CheckSquare, Edit, Plus, Save, Trash2, X } from "lucide-react"
-import { addDays, format, startOfWeek } from "date-fns"
+import { format } from "date-fns"
 import {
-  Bar,
-  BarChart as RechartsBarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
   Pie,
   PieChart,
-  Cell
+  ResponsiveContainer,
+  Cell,
+  Tooltip
 } from "recharts"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
-import type { AppState, DailyRecord, Habit } from "@/lib/types"
+import type { AppState, Habit } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -292,7 +288,7 @@ export function AnalyticsTab({ state, toggleHabit, addHabit, updateHabit, delete
           <ResponsiveContainer width="100%" height={250}>
             {pointData.length > 0 ? (
                 <PieChart>
-                <Pie data={pointData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                <Pie data={pointData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => `${entry.name}: ${entry.value}`}>
                     {pointData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
